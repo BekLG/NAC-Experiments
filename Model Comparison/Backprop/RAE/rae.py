@@ -136,12 +136,19 @@ def fit_gmm_on_latent(model, loader, n_components=75):
         for data, _ in loader:
             data = data.view(data.size(0), -1)
             z = model.encoder(data)
-            latents.append(z.cpu().numpy())
+            
+            # Convert to numpy and clip latent representations to range [0, 1]
+            z_clipped = np.clip(z.cpu().numpy(), 0, 1)
+            latents.append(z_clipped)
+    
+    # Combine all latent representations into a single array
     latents = np.vstack(latents)
 
+    # Fit the Gaussian Mixture Model on clipped latents
     gmm = GaussianMixture(n_components=n_components, covariance_type='full')
     gmm.fit(latents)
     print("GMM fitted on latent representations.")
+    
     return gmm
 
 def masked_mse(model, loader):
